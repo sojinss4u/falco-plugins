@@ -20,6 +20,7 @@ package cloudwatchlogs
 import (
 	"context"
 	"time"
+        "fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -121,7 +122,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 	go func() {
 		defer close(eventC)
 		defer close(errC)
-
+                fmt.Println("Starting Query ..")
 		var lastEventTime int64
 		for {
 			// Update the start time if there's a last event time
@@ -137,6 +138,8 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 				return
 			}
 			queryID := startQueryOutput.QueryId
+ 
+                        fmt.Println("QueryID: %s", queryID)
 
 			// Create the input for GetQueryResults outside the loop
 			getQueryResultsInput := &cloudwatchlogs.GetQueryResultsInput{
