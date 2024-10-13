@@ -1,4 +1,4 @@
-module github.com/falcosecurity/plugins/shared/go/aws/cloudwatchlogs
+module github.com/sojinss4u/falco-plugins/shared/go/aws/cloudwatchlogs
 
 go 1.15
 

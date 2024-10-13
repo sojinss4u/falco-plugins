@@ -1,4 +1,4 @@
-module github.com/falcosecurity/plugins/plugins/k8saudit
+module github.com/sojinss4u/falco-plugins/plugins/k8saudit
 
 go 1.15
 
