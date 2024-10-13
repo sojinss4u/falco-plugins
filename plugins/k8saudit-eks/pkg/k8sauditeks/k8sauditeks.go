@@ -31,9 +31,9 @@ import (
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins/source"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/symbols/extract"
-	"github.com/falcosecurity/plugins/plugins/k8saudit/pkg/k8saudit"
-	"github.com/falcosecurity/plugins/shared/go/aws/cloudwatchlogs"
-	"github.com/falcosecurity/plugins/shared/go/aws/session"
+	"github.com/sojinss4u/falco-plugins/plugins/k8saudit/pkg/k8saudit"
+	"github.com/sojinss4u/falco-plugins/shared/go/aws/cloudwatchlogs"
+	"github.com/sojinss4u/falco-plugins/shared/go/aws/session"
 	"github.com/invopop/jsonschema"
 )
 

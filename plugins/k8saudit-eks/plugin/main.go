@@ -21,7 +21,7 @@ import (
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins/extractor"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins/source"
-	"github.com/falcosecurity/plugins/plugins/k8saudit-eks/pkg/k8sauditeks"
+	"github.com/sojinss4u/falco-plugins/k8saudit-eks/pkg/k8sauditeks"
 )
 
 func init() {
