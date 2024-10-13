@@ -1,4 +1,4 @@
-module github.com/falcosecurity/plugins/shared/go/aws/session
+module github.com/sojinss4u/falco-plugins/shared/go/aws/session
 
 go 1.15
 
