@@ -96,8 +96,124 @@ func CreateClient(sess *session.Session, cfgs *aws.Config) *Client {
 	}
 }
 
-// Open returns an instance with the functionn called to retrieve logs
+// This function uses CloudWatch Query Insights Instead of filter log events to retrieve cloudwatch logs
+
 func (client *Client) Open(context context.Context, filter *Filter, options *Options) (chan *cloudwatchlogs.FilteredLogEvent, chan error) {
+	if options == nil {
+		options = new(Options)
+		options.setDefault()
+	}
+
+	queryString := `
+        fields @timestamp, @message, @ptr
+		`
+	// Create input for StartQuery
+	queryInput := &cloudwatchlogs.StartQueryInput{
+		StartTime:    aws.Int64(time.Now().Add(-1 * options.Shift).UnixMilli()), // Set start time with Shift
+		EndTime:      aws.Int64(time.Now().UnixMilli()),                         // Set end time to now
+		LogGroupName: aws.String(filter.LogGroupName),                           // Log group to query
+		QueryString:  aws.String(queryString),                                   // Query string
+	}
+
+	eventC := make(chan *cloudwatchlogs.FilteredLogEvent, options.BufferSize)
+	errC := make(chan error)
+
+	go func() {
+		defer close(eventC)
+		defer close(errC)
+
+		var lastEventTime int64
+		for {
+			// Update the start time if there's a last event time
+			if lastEventTime > 0 {
+				queryInput.StartTime = aws.Int64(lastEventTime + 1)
+				queryInput.EndTime = aws.Int64(time.Now().UnixMilli())
+			}
+
+			// Start the query
+			startQueryOutput, err := client.CloudWatchLogs.StartQuery(queryInput)
+			if err != nil {
+				errC <- err
+				return
+			}
+			queryID := startQueryOutput.QueryId
+
+			// Create the input for GetQueryResults outside the loop
+			getQueryResultsInput := &cloudwatchlogs.GetQueryResultsInput{
+				QueryId: queryID,
+			}
+
+			// Poll for query results
+			var queryCompleted bool
+			for !queryCompleted {
+				time.Sleep(5 * time.Second)
+
+				// Retrieve query results
+				queryResults, err := client.CloudWatchLogs.GetQueryResults(getQueryResultsInput)
+				if err != nil {
+					errC <- err
+					return
+				}
+
+				// Check the status of the query
+				if *queryResults.Status == "Complete" {
+					queryCompleted = true
+					// Process the query results only if the query is complete
+					for _, result := range queryResults.Results {
+						var timestamp, message, ptr string
+						// Extract fields from each result
+						for _, field := range result {
+							switch *field.Field {
+							case "@timestamp":
+								timestamp = *field.Value
+							case "@message":
+								message = *field.Value
+							case "@ptr":
+								ptr = *field.Value
+							}
+						}
+
+						// Create a new FilteredLogEvent and populate the fields
+						parsedTimestamp := parseTimestampToMillis(timestamp)
+						filteredLogEvent := &cloudwatchlogs.FilteredLogEvent{
+							EventId:       aws.String(ptr),
+							IngestionTime: aws.Int64(time.Now().UnixMilli()), // Use current time as ingestion time
+							LogStreamName: aws.String(filter.LogGroupName),   // Use log group name as log stream
+							Message:       aws.String(message),
+							Timestamp:     aws.Int64(parsedTimestamp),
+						}
+
+						// Send the formatted event to the event channel
+						eventC <- filteredLogEvent
+
+						// Update lastEventTime
+						if lastEventTime < parsedTimestamp {
+							lastEventTime = parsedTimestamp
+						}
+					}
+				}
+			}
+
+			// Wait for the polling interval before the next loop
+			time.Sleep(options.PollingInterval)
+		}
+	}()
+	return eventC, errC
+}
+
+// parseTimestampToMillis converts a timestamp string to milliseconds since Unix epoch
+func parseTimestampToMillis(timestamp string) int64 {
+	// Parse the timestamp in "yyyy-MM-dd HH:mm:ss.SSS" format
+	t, err := time.Parse("2006-01-02 15:04:05.000", timestamp)
+	if err != nil {
+		// If parsing fails, return the current time in milliseconds
+		return time.Now().UnixMilli()
+	}
+	return t.UnixNano() / int64(time.Millisecond)
+}
+
+// Open returns an instance with the functionn called to retrieve logs
+func (client *Client) OpenFilterLogEvents(context context.Context, filter *Filter, options *Options) (chan *cloudwatchlogs.FilteredLogEvent, chan error) {
 	if options == nil {
 		options = new(Options)
 		options.setDefault()
@@ -148,3 +264,5 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 	}()
 	return eventC, errC
 }
+
+
