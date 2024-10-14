@@ -118,12 +118,13 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 
 	eventC := make(chan *cloudwatchlogs.FilteredLogEvent, options.BufferSize)
 	errC := make(chan error)
+        
+        var nextStartTime int64
 
 	go func() {
 		defer close(eventC)
 		defer close(errC)
         fmt.Println("Starting Query ..")
-		var nextStartTime int64
 		for {
 			// Update the start time if there's a last event time
 			if nextStartTime > 0 {
