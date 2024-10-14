@@ -106,7 +106,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 	}
 
 	queryString := `
-        fields @timestamp, @message, @ptr
+        fields @timestamp, @message, @ptr | filter @message like /audit/
 		`
 	// Create input for StartQuery
 	queryInput := &cloudwatchlogs.StartQueryInput{
