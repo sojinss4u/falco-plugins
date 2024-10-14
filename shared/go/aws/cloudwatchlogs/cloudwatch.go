@@ -108,6 +108,9 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 	queryString := `
         fields @timestamp, @message, @ptr | filter @message like /audit/
 		`
+
+	fmt.Println("Inside CloudWatch Open Function")
+
 	// Create input for StartQuery
 	queryInput := &cloudwatchlogs.StartQueryInput{
 		StartTime:    aws.Int64(time.Now().Add(-1 * options.Shift).UnixMilli()), // Set start time with Shift
