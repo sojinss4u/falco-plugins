@@ -148,7 +148,8 @@ func (p *Plugin) Open(clustername string) (source.Instance, error) {
 		for {
 			select {
 			case i := <-eventsC:
-				message := *i.Message
+                                message := '{"kind":"Event","apiVersion":"audit.k8s.io/v1","level":"RequestResponse","auditID":"0e31d044-ea7f-4ca2-8034-ee0f543acd44","stage":"ResponseStarted","requestURI":"/api/v1/namespaces/traefik-v2-flux/pods/traefik-concierge-5556b9d544-8tcvp/exec?command=%2Fbin%2Fsh\u0026container=web\u0026stdin=true\u0026stdout=true\u0026tty=true","verb":"create","user":{"username":"soji.antony@razorpay.com","groups":["39630c45-9625-4d17-874a-b2630c02a943","08a9114c-6931-4038-b2bf-8e12585ecb8f","811f79b0-99b2-43f0-acfb-e2513dfc1559","system:authenticated"]},"sourceIPs":["115.110.224.178"],"userAgent":"kubectl/v1.30.0 (darwin/amd64) kubernetes/7c48c2b","objectRef":{"resource":"pods","namespace":"traefik-v2-flux","name":"traefik-concierge-5556b9d544-8tcvp","apiVersion":"v1","subresource":"exec"},"responseStatus":{"metadata":{},"code":101},"requestReceivedTimestamp":"2024-10-14T04:58:30.365903Z","stageTimestamp":"2024-10-14T04:58:30.386617Z","annotations":{"authorization.k8s.io/decision":"allow","authorization.k8s.io/reason":"RBAC: allowed by ClusterRoleBinding \"admin-binding\" of ClusterRole \"cluster-admin\" to User \"soji.antony@razorpay.com\""}}'
+				//message := *i.Message
 				if strings.HasSuffix(message, "[Truncated...]") {
 					auditID := regExpCAuditID.FindStringSubmatch(message)
 					if len(auditID) > 0 {
