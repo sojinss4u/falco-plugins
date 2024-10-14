@@ -148,7 +148,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 			}
 			queryID := startQueryOutput.QueryId
  
-            fmt.Println("QueryID: %s", queryID)
+                        fmt.Println(queryID)
 
 			// Create the input for GetQueryResults outside the loop
 			getQueryResultsInput := &cloudwatchlogs.GetQueryResultsInput{
