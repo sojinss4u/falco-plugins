@@ -124,7 +124,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 	go func() {
 		defer close(eventC)
 		defer close(errC)
-        fmt.Println("Starting Query ..")
+                fmt.Println("Starting Query ..")
 		for {
 			// Update the start time if there's a last event time
 			if nextStartTime > 0 {
