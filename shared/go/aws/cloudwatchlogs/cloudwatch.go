@@ -122,13 +122,21 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 	go func() {
 		defer close(eventC)
 		defer close(errC)
-                fmt.Println("Starting Query ..")
-		var lastEventTime int64
+        fmt.Println("Starting Query ..")
+		var nextStartTime int64
 		for {
 			// Update the start time if there's a last event time
-			if lastEventTime > 0 {
-				queryInput.StartTime = aws.Int64(lastEventTime + 1)
-				queryInput.EndTime = aws.Int64(time.Now().UnixMilli())
+			if nextStartTime > 0 {
+				currentTime := time.Now().Unix()
+				timeDiff := (currentTime - nextStartTime) 
+				// Adding a protection so that the query will keep querying same time range & increase cost in case of any issues
+				if timeDiff > 600 {
+				  queryInput.StartTime = aws.Int64(time.Now().Add(-120 * time.Second).Unix())
+				  queryInput.EndTime = aws.Int64(time.Now().Unix())
+				}else {  
+					queryInput.StartTime = aws.Int64(nextStartTime)
+					queryInput.EndTime = aws.Int64(time.Now().Unix())
+				}
 			}
 
 			// Start the query
@@ -139,7 +147,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 			}
 			queryID := startQueryOutput.QueryId
  
-                        fmt.Println("QueryID: %s", queryID)
+            fmt.Println("QueryID: %s", queryID)
 
 			// Create the input for GetQueryResults outside the loop
 			getQueryResultsInput := &cloudwatchlogs.GetQueryResultsInput{
@@ -189,14 +197,11 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 						// Send the formatted event to the event channel
 						eventC <- filteredLogEvent
 
-						// Update lastEventTime
-						if lastEventTime < parsedTimestamp {
-							lastEventTime = parsedTimestamp
-						}
+					
 					}
 				}
 			}
-
+			nextStartTime = *queryInput.EndTime + 1
 			// Wait for the polling interval before the next loop
 			time.Sleep(options.PollingInterval)
 		}
