@@ -129,6 +129,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 		defer close(errC)
                 fmt.Println("Starting Query ..")
 		for {
+                        fmt.Println("Inside For Loop")
 			// Update the start time if there's a last event time
 			if nextStartTime > 0 {
 				currentTime := time.Now().Unix()
@@ -143,12 +144,16 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 				}
 			}
 
+			fmt.Println("Start Time: %v", queryInput.StartTime)
+                        fmt.Println("End Time: %v", queryInput.EndTime)
+
 			// Start the query
 			startQueryOutput, err := client.CloudWatchLogs.StartQuery(queryInput)
 			if err != nil {
 				errC <- err
 				return
 			}
+                        fmt.Println("Started Query")
 			queryID := startQueryOutput.QueryId
  
                         fmt.Println(queryID)
