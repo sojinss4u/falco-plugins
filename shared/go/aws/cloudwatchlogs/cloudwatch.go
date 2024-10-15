@@ -162,7 +162,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 
 			// Create the input for GetQueryResults outside the loop
 			getQueryResultsInput := &cloudwatchlogs.GetQueryResultsInput{
-				QueryId: queryID,
+				QueryId: aws.String(queryID),
 			}
 
 			// Poll for query results
