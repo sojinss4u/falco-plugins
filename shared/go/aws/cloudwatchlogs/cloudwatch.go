@@ -128,6 +128,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 		defer close(eventC)
 		defer close(errC)
                 fmt.Println("Starting Query ..")
+                fmt.Println("Entering for loop ..")
 		for {
                         fmt.Println("Inside For Loop")
 			// Update the start time if there's a last event time
