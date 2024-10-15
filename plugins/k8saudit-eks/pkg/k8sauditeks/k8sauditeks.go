@@ -138,8 +138,8 @@ func (p *Plugin) Open(clustername string) (source.Instance, error) {
 	client := cloudwatchlogs.CreateClient(session.CreateSession(p.Config.Region, p.Config.Profile), nil)
 	ctx, cancel := context.WithCancel(context.Background())
 	options := cloudwatchlogs.CreateOptions(
-		p.Config.Shift * time.Second,
-	    p.Config.PollingInterval * time.Second,
+		time.Duration(p.Config.Shift) * time.Second,
+	    time.Duration(p.Config.PollingInterval) * time.Second,
 		p.Config.BufferSize,
 	)
 	eventsC, errC := client.Open(ctx, filter, options)
