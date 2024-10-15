@@ -151,6 +151,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 			// Start the query
 			startQueryOutput, err := client.CloudWatchLogs.StartQuery(queryInput)
 			if err != nil {
+                                fmt.Println(err)
 				errC <- err
 				return
 			}
