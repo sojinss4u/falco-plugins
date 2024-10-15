@@ -145,8 +145,8 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 				}
 			}
 
-			fmt.Println("Start Time: %v", queryInput.StartTime)
-                        fmt.Println("End Time: %v", queryInput.EndTime)
+			fmt.Println(queryInput.StartTime)
+                        fmt.Println(queryInput.EndTime)
 
 			// Start the query
 			startQueryOutput, err := client.CloudWatchLogs.StartQuery(queryInput)
@@ -156,7 +156,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 				return
 			}
                         fmt.Println("Started Query")
-			queryID := startQueryOutput.QueryId
+			queryID := *startQueryOutput.QueryId
  
                         fmt.Println(queryID)
 
