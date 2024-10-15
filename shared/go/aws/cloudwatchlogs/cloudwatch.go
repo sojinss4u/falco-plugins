@@ -110,8 +110,6 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
         fields @timestamp, @message, @ptr | filter @message like /audit/
 		`
 
-	fmt.Println("Inside CloudWatch Open Function")
-
 	// Create input for StartQuery
 	queryInput := &cloudwatchlogs.StartQueryInput{
 		StartTime:    aws.Int64(time.Now().Add(-1 * options.Shift).Unix()), // Set start time to (current time - shift) seconds
@@ -128,10 +126,7 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 	go func() {
 		defer close(eventC)
 		defer close(errC)
-		fmt.Println("Starting Query ..")
-		fmt.Println("Entering for loop ..")
 		for {
-			fmt.Println("Inside For Loop")
 			// Update the start time if there's a last event time
 			if nextStartTime > 0 {
 				currentTime := time.Now().Unix()
@@ -146,9 +141,6 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 				}
 			}
 
-			fmt.Println(*queryInput.StartTime)
-			fmt.Println(*queryInput.EndTime)
-
 			// Start the query
 			startQueryOutput, err := client.CloudWatchLogs.StartQuery(queryInput)
 			if err != nil {
@@ -156,10 +148,8 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 				errC <- err
 				return
 			}
-			fmt.Println("Started Query")
-			queryID := *startQueryOutput.QueryId
 
-			fmt.Println(queryID)
+			queryID := *startQueryOutput.QueryId
 
 			// Create the input for GetQueryResults outside the loop
 			getQueryResultsInput := &cloudwatchlogs.GetQueryResultsInput{
