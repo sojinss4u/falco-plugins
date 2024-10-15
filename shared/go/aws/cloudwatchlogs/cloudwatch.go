@@ -19,8 +19,8 @@ package cloudwatchlogs
 
 import (
 	"context"
+	"fmt"
 	"time"
-        "fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -28,9 +28,10 @@ import (
 )
 
 const (
-	DefaultShift           time.Duration = 1 * time.Second // controls the time shift in past for the first call to CloudwatchLogs API
-	DefaultPollingInterval time.Duration = 5 * time.Second // time between two calls to CloudwatchLogs API
-	DefaultBufferSize      uint64        = 200             // buffer size of the channel that transmits Logs to the Plugin
+	DefaultShift            time.Duration = 1 * time.Second // controls the time shift in past for the first call to CloudwatchLogs API
+	DefaultPollingInterval  time.Duration = 5 * time.Second // time between two calls to CloudwatchLogs API
+	DefaultBufferSize       uint64        = 200             // buffer size of the channel that transmits Logs to the Plugin
+	QueryResultPollInterval time.Duration = 5 * time.Second // time to wait before checking the cloudwatch insight query result
 )
 
 // Filter represents a filter for retrieving logs from CloudwatchLogs API
@@ -113,52 +114,52 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 
 	// Create input for StartQuery
 	queryInput := &cloudwatchlogs.StartQueryInput{
-		StartTime:    aws.Int64(time.Now().Add(-1 * options.Shift).UnixMilli()), // Set start time with Shift
-		EndTime:      aws.Int64(time.Now().UnixMilli()),                         // Set end time to now
-		LogGroupName: aws.String(filter.LogGroupName),                           // Log group to query
-		QueryString:  aws.String(queryString),                                   // Query string
+		StartTime:    aws.Int64(time.Now().Add(-1 * options.Shift).Unix()), // Set start time to (current time - shift) seconds
+		EndTime:      aws.Int64(time.Now().Unix()),                         // Set end time to current time
+		LogGroupName: aws.String(filter.LogGroupName),                      // Log group to query
+		QueryString:  aws.String(queryString),                              // Query string
 	}
 
 	eventC := make(chan *cloudwatchlogs.FilteredLogEvent, options.BufferSize)
 	errC := make(chan error)
-        
-        var nextStartTime int64
+
+	var nextStartTime int64
 
 	go func() {
 		defer close(eventC)
 		defer close(errC)
-                fmt.Println("Starting Query ..")
-                fmt.Println("Entering for loop ..")
+		fmt.Println("Starting Query ..")
+		fmt.Println("Entering for loop ..")
 		for {
-                        fmt.Println("Inside For Loop")
+			fmt.Println("Inside For Loop")
 			// Update the start time if there's a last event time
 			if nextStartTime > 0 {
 				currentTime := time.Now().Unix()
-				timeDiff := (currentTime - nextStartTime) 
-				// Adding a protection so that the query will keep querying same time range & increase cost in case of any issues
+				timeDiff := (currentTime - nextStartTime)
+				// Adding a protection here so that the query will not keep querying same time range again & increase cost in case of any issues
 				if timeDiff > 600 {
-				  queryInput.StartTime = aws.Int64(time.Now().Add(-120 * time.Second).Unix())
-				  queryInput.EndTime = aws.Int64(time.Now().Unix())
-				}else {  
+					queryInput.StartTime = aws.Int64(time.Now().Add(-1 * options.Shift).Unix())
+					queryInput.EndTime = aws.Int64(time.Now().Unix())
+				} else {
 					queryInput.StartTime = aws.Int64(nextStartTime)
 					queryInput.EndTime = aws.Int64(time.Now().Unix())
 				}
 			}
 
-			fmt.Println(queryInput.StartTime)
-                        fmt.Println(queryInput.EndTime)
+			fmt.Println(*queryInput.StartTime)
+			fmt.Println(*queryInput.EndTime)
 
 			// Start the query
 			startQueryOutput, err := client.CloudWatchLogs.StartQuery(queryInput)
 			if err != nil {
-                                fmt.Println(err)
+				fmt.Println(err)
 				errC <- err
 				return
 			}
-                        fmt.Println("Started Query")
+			fmt.Println("Started Query")
 			queryID := *startQueryOutput.QueryId
- 
-                        fmt.Println(queryID)
+
+			fmt.Println(queryID)
 
 			// Create the input for GetQueryResults outside the loop
 			getQueryResultsInput := &cloudwatchlogs.GetQueryResultsInput{
@@ -168,7 +169,8 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 			// Poll for query results
 			var queryCompleted bool
 			for !queryCompleted {
-				time.Sleep(5 * time.Second)
+				// Sleep before checking the query result again
+				time.Sleep(QueryResultPollInterval)
 
 				// Retrieve query results
 				queryResults, err := client.CloudWatchLogs.GetQueryResults(getQueryResultsInput)
@@ -208,7 +210,6 @@ func (client *Client) Open(context context.Context, filter *Filter, options *Opt
 						// Send the formatted event to the event channel
 						eventC <- filteredLogEvent
 
-					
 					}
 				}
 			}
@@ -232,7 +233,7 @@ func parseTimestampToMillis(timestamp string) int64 {
 }
 
 // Open returns an instance with the functionn called to retrieve logs
-func (client *Client) OpenFilterLogEvents(context context.Context, filter *Filter, options *Options) (chan *cloudwatchlogs.FilteredLogEvent, chan error) {
+/*func (client *Client) OpenFilterLogEvents(context context.Context, filter *Filter, options *Options) (chan *cloudwatchlogs.FilteredLogEvent, chan error) {
 	if options == nil {
 		options = new(Options)
 		options.setDefault()
@@ -282,6 +283,4 @@ func (client *Client) OpenFilterLogEvents(context context.Context, filter *Filte
 		}
 	}()
 	return eventC, errC
-}
-
-
+}*/
